@@ -12,6 +12,13 @@ pub struct QuadTreeConfig {
 }
 
 impl QuadTreeConfig {
+    pub fn default() -> Self {
+        QuadTreeConfig {
+            min_per_quad: 50,
+            max_per_cell: 100,
+        }
+    }
+
     pub fn new(min_per_quad: i32, max_per_cell: i32) -> Self {
         assert!(min_per_quad < max_per_cell);
         QuadTreeConfig {
@@ -28,7 +35,7 @@ pub struct QuadTree {
 impl QuadTree {
     pub fn new() -> Self {
         QuadTree {
-            config : QuadTreeConfig::new(50, 100),
+            config : QuadTreeConfig::default(),
         }
     }
 
