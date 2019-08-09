@@ -20,7 +20,6 @@ struct Cell<T: Coordinate> {
     points: HashMap<Id, Point<T>>,
 }
 
-
 impl<T: Coordinate> Node<T> for Cell<T> {
     fn add(&mut self, id: Id, p: Point<T>) {
         self.points.insert(id, p);
@@ -141,13 +140,15 @@ impl<T: Coordinate + 'static> Quad<T> {
     fn replace_child(&mut self, curr_child_p: *const Node<T>, new_child: Box<Node<T>>) {
         // let curr_p = &**curr_child as *const Node<T>;
 
-        let idx = self.children.iter().position(|ch| &(**ch.as_ref().unwrap()) as *const Node<T> == curr_child_p)
+        let idx = self
+            .children
+            .iter()
+            .position(|ch| &(**ch.as_ref().unwrap()) as *const Node<T> == curr_child_p)
             .expect("Child not found when trying to replace it.");
 
         self.children[idx] = Some(new_child);
     }
 }
-
 
 impl<T: Coordinate> fmt::Debug for Quad<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -173,23 +174,16 @@ mod test {
     #[test]
     fn quad_new_right_cell_boundaries() {
         let quad = Quad::new(QuadTreeConfig::default(), Rectangle::new(0, 10, 10, 40));
-        let cells_info = quad.get_cells_info();
-        assert_eq!(
-            "((0, 10) - (5, 25))",
-            format!("{:?}", cells_info[0].boundary)
-        );
-        assert_eq!(
-            "((5, 10) - (10, 25))",
-            format!("{:?}", cells_info[1].boundary)
-        );
-        assert_eq!(
-            "((0, 25) - (5, 40))",
-            format!("{:?}", cells_info[2].boundary)
-        );
-        assert_eq!(
-            "((5, 25) - (10, 40))",
-            format!("{:?}", cells_info[3].boundary)
-        );
+        let cells_info = quad
+            .get_cells_info()
+            .iter()
+            .map(|ci| format!("{:?}", ci.boundary))
+            .collect::<Vec<String>>();
+
+        assert_eq!("((0, 10) - (5, 25))", cells_info[0]);
+        assert_eq!("((5, 10) - (10, 25))", cells_info[1]);
+        assert_eq!("((0, 25) - (5, 40))", cells_info[2]);
+        assert_eq!("((5, 25) - (10, 40))", cells_info[3]);
     }
 
     #[test]
