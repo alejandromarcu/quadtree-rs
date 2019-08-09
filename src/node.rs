@@ -20,23 +20,20 @@ struct Cell<T: Coordinate> {
     points: HashMap<Id, Point<T>>,
 }
 
-impl<T: Coordinate> Node<T> for Cell<T> {
+impl<T: Coordinate + 'static> Node<T> for Cell<T> {
     fn add(&mut self, id: Id, p: Point<T>) {
         self.points.insert(id, p);
 
         if self.points.len() as i32 > self.config.max_per_cell {
-            println!("Split in leaf {:?}", self);
-            // let mut quad = Quad::new(self.config.clone(), self.boundary.clone());
+            let mut quad: Box<Quad<T>> = Quad::new(self.config.clone(), self.boundary.clone());
 
-            // for (id, point) in self.points.iter() {
-            //     quad.add(id.clone(), point.clone());
-            // }
+            for (id, point) in self.points.iter() {
+                quad.add(id.clone(), point.clone());
+            }
 
-            // unsafe {
-            // // TODO fix 0
-
-            //     (*self.parent).children[0] = Some(quad);
-            // }
+            unsafe {
+                (*self.parent).replace_child(self, quad);
+            }
         }
     }
 
@@ -138,8 +135,6 @@ impl<T: Coordinate + 'static> Quad<T> {
     }
 
     fn replace_child(&mut self, curr_child_p: *const Node<T>, new_child: Box<Node<T>>) {
-        // let curr_p = &**curr_child as *const Node<T>;
-
         let idx = self
             .children
             .iter()
@@ -165,9 +160,10 @@ impl<T: Coordinate> fmt::Debug for Quad<T> {
 }
 
 #[cfg(test)]
-mod test {
-    use super::{Cell, Quad};
+mod quad_test {
+    use super::Quad;
     use crate::node::Node;
+    use crate::point::Point;
     use crate::rectangle::Rectangle;
     use crate::QuadTreeConfig;
 
@@ -200,5 +196,40 @@ mod test {
 
         // Now the first quadrant has 4 cells plus the other 3 quadrants
         assert_eq!(7, quad.get_cells_info().len());
+    }
+
+    #[test]
+    fn quad_split() {
+        let mut quad = Quad::new(QuadTreeConfig::new(0, 5), Rectangle::new(0, 0, 256, 256));
+
+        // Adding 5 points in the top left quadrant, shouldn't cause a split yet
+        for i in 0..5 {
+            quad.add(i, Point::new(i, 0));
+        }
+
+        assert_eq!(4, quad.get_cells_info().len());
+
+        // But when adding the 6th point in the bottom right quadrant of the top left,
+        // it should split now, and the top left is now a quad.
+        quad.add(5, Point::new(127, 127));
+        assert_eq!(7, quad.get_cells_info().len());
+
+        // Adding this new point will cause a few more splits since it needs to get to a
+        // cell small enough to have less than 5 points.
+        quad.add(6, Point::new(6, 0));
+        assert_eq!(19, quad.get_cells_info().len());
+
+        // let's add a point somewhere else and make sure that it got in the right place
+        quad.add(7, Point::new(7, 7));
+        let cell_boundary = Rectangle::new(4, 4, 8, 8);
+
+        let cell_count = quad
+            .get_cells_info()
+            .iter()
+            .find(|&cell| cell.boundary == cell_boundary)
+            .expect("The cell was not found, something is wrong")
+            .count;
+
+        assert_eq!(1, cell_count);
     }
 }

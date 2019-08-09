@@ -2,7 +2,7 @@ use crate::point::Coordinate;
 use crate::point::Point;
 use std::fmt;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Rectangle<T: Coordinate> {
     pub x0: T,
     pub y0: T,
