@@ -44,7 +44,6 @@ impl<T: Coordinate> Node<T> for Cell<T> {
     fn get_cells_info(&self) -> Vec<CellInfo<T>> {
         vec![CellInfo::new(&self.boundary, self.points.len())]
     }
-
 }
 
 impl<T: Coordinate> fmt::Debug for Cell<T> {
@@ -70,7 +69,7 @@ impl<T: Coordinate> Cell<T> {
 }
 
 #[derive(Debug)]
-pub struct CellInfo<T : Coordinate> {
+pub struct CellInfo<T: Coordinate> {
     pub boundary: Rectangle<T>,
     pub count: usize,
 }
@@ -82,7 +81,6 @@ impl<T: Coordinate> CellInfo<T> {
             count,
         }
     }
-
 }
 
 struct Quad<T: Coordinate> {
@@ -106,9 +104,9 @@ impl<T: Coordinate> Node<T> for Quad<T> {
     fn get_cells_info(&self) -> Vec<CellInfo<T>> {
         let mut info = vec![];
         for ch in self.children.iter() {
-            let mut ch_info = ch.as_ref().unwrap().get_cells_info(); 
-            info.append(&mut ch_info);        
-        }        
+            let mut ch_info = ch.as_ref().unwrap().get_cells_info();
+            info.append(&mut ch_info);
+        }
 
         info
     }
@@ -140,7 +138,14 @@ impl<T: Coordinate + 'static> Quad<T> {
         quad
     }
 
+    fn replace_child(&mut self, curr_child_p: *const Node<T>, new_child: Box<Node<T>>) {
+        // let curr_p = &**curr_child as *const Node<T>;
 
+        let idx = self.children.iter().position(|ch| &(**ch.as_ref().unwrap()) as *const Node<T> == curr_child_p)
+            .expect("Child not found when trying to replace it.");
+
+        self.children[idx] = Some(new_child);
+    }
 }
 
 
@@ -160,18 +165,46 @@ impl<T: Coordinate> fmt::Debug for Quad<T> {
 
 #[cfg(test)]
 mod test {
-    use super::Quad;
-    use crate::QuadTreeConfig;
-    use crate::rectangle::Rectangle;
+    use super::{Cell, Quad};
     use crate::node::Node;
+    use crate::rectangle::Rectangle;
+    use crate::QuadTreeConfig;
 
     #[test]
-    fn quad_new() {
+    fn quad_new_right_cell_boundaries() {
         let quad = Quad::new(QuadTreeConfig::default(), Rectangle::new(0, 10, 10, 40));
         let cells_info = quad.get_cells_info();
-        assert_eq!("((0, 10) - (5, 25))", format!("{:?}", cells_info[0].boundary));
-        assert_eq!("((5, 10) - (10, 25))", format!("{:?}", cells_info[1].boundary));
-        assert_eq!("((0, 25) - (5, 40))", format!("{:?}", cells_info[2].boundary));
-        assert_eq!("((5, 25) - (10, 40))", format!("{:?}", cells_info[3].boundary));
+        assert_eq!(
+            "((0, 10) - (5, 25))",
+            format!("{:?}", cells_info[0].boundary)
+        );
+        assert_eq!(
+            "((5, 10) - (10, 25))",
+            format!("{:?}", cells_info[1].boundary)
+        );
+        assert_eq!(
+            "((0, 25) - (5, 40))",
+            format!("{:?}", cells_info[2].boundary)
+        );
+        assert_eq!(
+            "((5, 25) - (10, 40))",
+            format!("{:?}", cells_info[3].boundary)
+        );
+    }
+
+    #[test]
+    fn quad_replace_child() {
+        let mut quad = Quad::new(QuadTreeConfig::default(), Rectangle::new(0, 10, 10, 40));
+
+        // Each quadrant is a cell, so 4 cells total
+        assert_eq!(4, quad.get_cells_info().len());
+
+        // replace the first quadrant with another quad
+        let quad2 = Quad::new(QuadTreeConfig::default(), Rectangle::new(0, 5, 10, 25));
+        let c0 = quad.children[0].as_ref().unwrap();
+        quad.replace_child(&**c0 as *const Node<i32>, quad2);
+
+        // Now the first quadrant has 4 cells plus the other 3 quadrants
+        assert_eq!(7, quad.get_cells_info().len());
     }
 }
