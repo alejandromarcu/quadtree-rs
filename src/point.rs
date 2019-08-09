@@ -7,8 +7,8 @@ impl<T> Coordinate for T where T: Num + PartialOrd + Copy {}
 
 #[derive(Clone)]
 pub struct Point<T: Coordinate> {
-    x: T,
-    y: T,
+    pub x: T,
+    pub y: T,
 }
 
 impl<T: Coordinate> Point<T> {
