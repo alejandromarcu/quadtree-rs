@@ -1,17 +1,16 @@
 use crate::point::Coordinate;
 use crate::point::Point;
-use std::convert::From;
 use std::fmt;
 
 #[derive(Clone)]
-pub struct Rectangle<T: Coordinate + From<i32>> {
+pub struct Rectangle<T: Coordinate> {
     pub x0: T,
     pub y0: T,
     pub x1: T,
     pub y1: T,
 }
 
-impl<T: Coordinate + From<i32>> Rectangle<T> {
+impl<T: Coordinate> Rectangle<T> {
     pub fn new(x0: T, y0: T, x1: T, y1: T) -> Self {
         Rectangle { x0, y0, x1, y1 }
     }
@@ -28,7 +27,7 @@ impl<T: Coordinate + From<i32>> Rectangle<T> {
     }
 }
 
-impl<T: Coordinate + fmt::Display + From<i32>> fmt::Debug for Rectangle<T> {
+impl<T: Coordinate> fmt::Debug for Rectangle<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
