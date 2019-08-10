@@ -1,14 +1,11 @@
 use crate::point::{Coordinate, Point};
 use crate::rectangle::Rectangle;
-use crate::QuadTreeConfig;
+use crate::{Id, QuadTreeConfig};
 
 use std::collections::HashMap;
 use std::fmt;
 
-// TODO use generics
-type Id = i32;
-
-trait Node<T: Coordinate>: fmt::Debug {
+pub trait Node<T: Coordinate>: fmt::Debug {
     fn add(&mut self, id: Id, p: Point<T>);
     fn get_cells_info(&self) -> Vec<CellInfo<T>>;
 }
@@ -79,9 +76,9 @@ impl<T: Coordinate> CellInfo<T> {
     }
 }
 
-struct Quad<T: Coordinate> {
+pub(crate) struct Quad<T: Coordinate> {
     config: QuadTreeConfig,
-    boundary: Rectangle<T>,
+    pub boundary: Rectangle<T>,
     children: [Option<Box<Node<T>>>; 4],
 }
 
@@ -109,7 +106,7 @@ impl<T: Coordinate> Node<T> for Quad<T> {
 }
 
 impl<T: Coordinate + 'static> Quad<T> {
-    fn new(config: QuadTreeConfig, boundary: Rectangle<T>) -> Box<Self> {
+    pub fn new(config: QuadTreeConfig, boundary: Rectangle<T>) -> Box<Self> {
         let quad = Quad {
             config: config.clone(),
             boundary: boundary.clone(),

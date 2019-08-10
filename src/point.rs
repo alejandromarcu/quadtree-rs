@@ -1,9 +1,9 @@
 use num::Num;
 use std::fmt;
 
-pub trait Coordinate: Num + PartialOrd + Copy + From<i8> + fmt::Display {}
+pub trait Coordinate: Num + PartialOrd + Copy + From<i8> + fmt::Display + 'static {}
 
-impl<T> Coordinate for T where T: Num + PartialOrd + Copy + From<i8> + fmt::Display {}
+impl<T> Coordinate for T where T: Num + PartialOrd + Copy + From<i8> + fmt::Display + 'static {}
 
 #[derive(Clone)]
 pub struct Point<T: Coordinate> {
