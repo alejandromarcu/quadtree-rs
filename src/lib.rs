@@ -54,7 +54,7 @@ impl<T: Coordinate> QuadTree<T> {
         if self.points.contains_key(&id) {
             return Err(format!("Id already exists: {:?}", id));
         }
-        (*self.root).add(id.clone(), point.clone());
+        (*self.root).add(id, point.clone());
         self.points.insert(id, point);
         Ok(())
     }

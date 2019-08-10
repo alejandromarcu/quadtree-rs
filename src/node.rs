@@ -188,8 +188,9 @@ mod quad_test {
 
         // replace the first quadrant with another quad
         let quad2 = Quad::new(QuadTreeConfig::default(), Rectangle::new(0, 5, 10, 25));
-        let c0 = quad.children[0].as_ref().unwrap();
-        quad.replace_child(&**c0 as *const Node<i32>, quad2);
+     
+        let child_pointer = &**(quad.children[0].as_ref().unwrap()) as *const Node<i32>;
+        quad.replace_child(child_pointer, quad2);
 
         // Now the first quadrant has 4 cells plus the other 3 quadrants
         assert_eq!(7, quad.get_cells_info().len());
