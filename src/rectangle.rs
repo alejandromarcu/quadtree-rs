@@ -26,8 +26,12 @@ impl<T: Coordinate> Rectangle<T> {
         }
     }
 
-    pub fn inside_of(&self, other: &Rectangle<T>) -> bool {
+    pub fn is_inside_of(&self, other: &Rectangle<T>) -> bool {
         self.x0 >= other.x0 && self.y0 >= other.y0 && self.x1 <= other.x1 && self.y1 <= other.y1
+    }
+
+    pub fn is_point_inside(&self, point: &Point<T>) -> bool {
+        point.x >= self.x0 && point.x < self.x1 && point.y >= self.y0 && point.y < self.y1
     }
 
     pub fn overlaps(&self, other: &Rectangle<T>) -> bool {
@@ -48,6 +52,7 @@ impl<T: Coordinate> fmt::Debug for Rectangle<T> {
 #[cfg(test)]
 mod test {
     use super::Rectangle;
+    use crate::point::Point;
 
     #[test]
     fn center_int() {
@@ -72,15 +77,15 @@ mod test {
     }
 
     #[test]
-    fn is_inside() {
+    fn is_inside_of() {
         let r = Rectangle::new(0, 0, 10, 10);
-        assert_eq!(true, r.inside_of(&Rectangle::new(0, 0, 10, 10)));
-        assert_eq!(true, r.inside_of(&Rectangle::new(-5, -5, 15, 15)));
+        assert_eq!(true, r.is_inside_of(&Rectangle::new(0, 0, 10, 10)));
+        assert_eq!(true, r.is_inside_of(&Rectangle::new(-5, -5, 15, 15)));
 
-        assert_eq!(false, r.inside_of(&Rectangle::new(1, -5, 15, 15)));
-        assert_eq!(false, r.inside_of(&Rectangle::new(-5, 1, 15, 15)));
-        assert_eq!(false, r.inside_of(&Rectangle::new(-5, -5, 9, 15)));
-        assert_eq!(false, r.inside_of(&Rectangle::new(-5, -5, 15, 1)));
+        assert_eq!(false, r.is_inside_of(&Rectangle::new(1, -5, 15, 15)));
+        assert_eq!(false, r.is_inside_of(&Rectangle::new(-5, 1, 15, 15)));
+        assert_eq!(false, r.is_inside_of(&Rectangle::new(-5, -5, 9, 15)));
+        assert_eq!(false, r.is_inside_of(&Rectangle::new(-5, -5, 15, 1)));
     }
 
     #[test]
@@ -106,4 +111,19 @@ mod test {
         assert_eq!(true, r.overlaps(&Rectangle::new(5, 5, 6, 6)));
     }
 
+    #[test]
+    fn is_point_inside() {
+        let r = Rectangle::new(0, 0, 10, 10);
+       
+        assert_eq!(true, r.is_point_inside(&Point::new(0, 5)));
+        assert_eq!(true, r.is_point_inside(&Point::new(5, 0)));
+        assert_eq!(true, r.is_point_inside(&Point::new(9, 9)));
+
+        assert_eq!(false, r.is_point_inside(&Point::new(10, 10)));
+        assert_eq!(false, r.is_point_inside(&Point::new(5, -1)));
+        assert_eq!(false, r.is_point_inside(&Point::new(5, 11)));
+        assert_eq!(false, r.is_point_inside(&Point::new(-1, 5)));
+        assert_eq!(false, r.is_point_inside(&Point::new(11, 5)));
+
+    }   
 }
