@@ -8,6 +8,7 @@ use std::fmt;
 pub trait Node<T: Coordinate>: fmt::Debug {
     fn add(&mut self, id: Id, p: Point<T>);
     fn get_cells_info(&self) -> Vec<CellInfo<T>>;
+    fn find_in_area(&self, area: &Rectangle<T>) -> Vec<Id>;
 }
 
 struct Cell<T: Coordinate> {
@@ -36,6 +37,16 @@ impl<T: Coordinate + 'static> Node<T> for Cell<T> {
 
     fn get_cells_info(&self) -> Vec<CellInfo<T>> {
         vec![CellInfo::new(&self.boundary, self.points.len())]
+    }
+
+    fn find_in_area(&self, area: &Rectangle<T>) -> Vec<Id> {
+        // Just an optimization, not sure if it's worth it.
+        let all = self.boundary.is_inside_of(area);
+        self.points
+            .iter()
+            .filter(|(_, point)| all || area.is_point_inside(point))
+            .map(|(id, _)| *id)
+            .collect::<Vec<Id>>()
     }
 }
 
@@ -102,6 +113,21 @@ impl<T: Coordinate> Node<T> for Quad<T> {
         }
 
         info
+    }
+
+    fn find_in_area(&self, area: &Rectangle<T>) -> Vec<Id> {
+        if !self.boundary.overlaps(area) {
+            return vec![];
+        }
+
+        let mut ids = vec![];
+
+        for ch in self.children.iter() {
+            let mut child_ids = ch.as_ref().unwrap().find_in_area(area);
+            ids.append(&mut child_ids);
+        }
+
+        ids
     }
 }
 
@@ -188,7 +214,7 @@ mod quad_test {
 
         // replace the first quadrant with another quad
         let quad2 = Quad::new(QuadTreeConfig::default(), Rectangle::new(0, 5, 10, 25));
-     
+
         let child_pointer = &**(quad.children[0].as_ref().unwrap()) as *const Node<i32>;
         quad.replace_child(child_pointer, quad2);
 
@@ -229,5 +255,58 @@ mod quad_test {
             .count;
 
         assert_eq!(1, cell_count);
+    }
+
+    // TODO test find_in_area
+}
+
+#[cfg(test)]
+mod cell_test {
+    use super::Quad;
+    use crate::point::Point;
+    use crate::rectangle::Rectangle;
+    use crate::QuadTreeConfig;
+
+    #[test]
+    fn find_in_area_all() {
+        // The child boundary will be (0, 0, 5, 5)
+        let mut quad = Quad::new(QuadTreeConfig::default(), Rectangle::new(0, 0, 20, 20));
+        let ch = &mut quad.children[0].as_mut().unwrap();
+
+        ch.add(1, Point::new(0, 0));
+        ch.add(2, Point::new(0, 9));
+        ch.add(3, Point::new(9, 0));
+        ch.add(4, Point::new(5, 5));
+
+        let mut points = ch.find_in_area(&Rectangle::new(-1, -1, 15, 15));
+        points.sort();
+
+        assert_eq!(vec![1, 2, 3, 4], points);
+    }
+
+    #[test]
+    fn find_in_area() {
+        // The child boundary will be (0, 0, 5, 5)
+        let mut quad = Quad::new(QuadTreeConfig::default(), Rectangle::new(0, 0, 20, 20));
+        let ch = &mut quad.children[0].as_mut().unwrap();
+
+        ch.add(1, Point::new(0, 0));
+        ch.add(2, Point::new(0, 8));
+        ch.add(3, Point::new(8, 0));
+        ch.add(4, Point::new(5, 5));
+
+        let mut points = ch.find_in_area(&Rectangle::new(0, 0, 9, 9));
+        points.sort();
+        assert_eq!(vec![1, 2, 3, 4], points);
+
+        let points = ch.find_in_area(&Rectangle::new(5, 5, 6, 6));
+        assert_eq!(vec![4], points);
+
+        let points = ch.find_in_area(&Rectangle::new(4, 4, 5, 5));
+        assert_eq!(true, points.is_empty());
+
+        let mut points = ch.find_in_area(&Rectangle::new(0, 0, 6, 6));
+        points.sort();
+        assert_eq!(vec![1, 4], points);
     }
 }
