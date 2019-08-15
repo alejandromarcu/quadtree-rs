@@ -88,7 +88,6 @@ impl<T: Coordinate> CellInfo<T> {
 }
 
 pub(crate) struct Quad<T: Coordinate> {
-    config: QuadTreeConfig,
     pub boundary: Rectangle<T>,
     children: [Option<Box<Node<T>>>; 4],
 }
@@ -134,7 +133,6 @@ impl<T: Coordinate> Node<T> for Quad<T> {
 impl<T: Coordinate + 'static> Quad<T> {
     pub fn new(config: QuadTreeConfig, boundary: Rectangle<T>) -> Box<Self> {
         let quad = Quad {
-            config: config.clone(),
             boundary: boundary.clone(),
             children: [None, None, None, None],
         };
