@@ -23,6 +23,12 @@ impl<T: Coordinate + 'static> Node<T> for Cell<T> {
         self.points.insert(id, p);
 
         if self.points.len() as i32 > self.config.max_per_cell {
+            let (_, first_point) = self.points.iter().nth(0).as_ref().unwrap().clone();
+            let all_in_the_same_location = !self.points.iter().any(|(_, p) | p != first_point);
+            if all_in_the_same_location {
+                return;
+            }
+
             let mut quad: Box<Quad<T>> = Quad::new(self.config.clone(), self.boundary.clone());
 
             for (id, point) in self.points.iter() {
@@ -261,13 +267,14 @@ mod quad_test {
 #[cfg(test)]
 mod cell_test {
     use super::Quad;
+    use crate::node::Node;
     use crate::point::Point;
     use crate::rectangle::Rectangle;
     use crate::QuadTreeConfig;
 
     #[test]
     fn find_in_area_all() {
-        // The child boundary will be (0, 0, 5, 5)
+        // The child boundary will be (0, 0, 10, 10)
         let mut quad = Quad::new(QuadTreeConfig::default(), Rectangle::new(0, 0, 20, 20));
         let ch = &mut quad.children[0].as_mut().unwrap();
 
@@ -284,7 +291,7 @@ mod cell_test {
 
     #[test]
     fn find_in_area() {
-        // The child boundary will be (0, 0, 5, 5)
+        // The child boundary will be (0, 0, 10, 10)
         let mut quad = Quad::new(QuadTreeConfig::default(), Rectangle::new(0, 0, 20, 20));
         let ch = &mut quad.children[0].as_mut().unwrap();
 
@@ -306,5 +313,24 @@ mod cell_test {
         let mut points = ch.find_in_area(&Rectangle::new(0, 0, 6, 6));
         points.sort();
         assert_eq!(vec![1, 4], points);
+    }
+
+    #[test]
+    fn same_location() {
+        // The child boundary will be (0, 0, 10, 10)
+        let mut quad = Quad::new(QuadTreeConfig::new(50, 100), Rectangle::new(0, 0, 20, 20));
+
+        // All those points are in the same location, so this shouldn't trigger a split of the quad,
+        // or it would cause infinite recursion.
+        for i in 0..1000 {
+            quad.add(i, Point::new(1,1));
+        }
+        
+
+        assert_eq!(4, quad.get_cells_info().len());
+
+        // now, if we add just an extra point, it should split the quad
+        quad.add(1000, Point::new(8, 8));
+        assert_eq!(7, quad.get_cells_info().len());
     }
 }

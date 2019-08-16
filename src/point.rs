@@ -5,7 +5,7 @@ pub trait Coordinate: Num + PartialOrd + Copy + From<i8> + fmt::Display + 'stati
 
 impl<T> Coordinate for T where T: Num + PartialOrd + Copy + From<i8> + fmt::Display + 'static {}
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Point<T: Coordinate> {
     pub x: T,
     pub y: T,
