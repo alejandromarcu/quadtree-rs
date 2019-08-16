@@ -95,7 +95,7 @@ impl<T: Coordinate> CellInfo<T> {
 
 pub(crate) struct Quad<T: Coordinate> {
     pub boundary: Rectangle<T>,
-    children: [Option<Box<Node<T>>>; 4],
+    children: [Option<Box<dyn Node<T>>>; 4],
 }
 
 impl<T: Coordinate> Node<T> for Quad<T> {
@@ -161,11 +161,11 @@ impl<T: Coordinate + 'static> Quad<T> {
         quad
     }
 
-    fn replace_child(&mut self, curr_child_p: *const Node<T>, new_child: Box<Node<T>>) {
+    fn replace_child(&mut self, curr_child_p: *const dyn Node<T>, new_child: Box<dyn Node<T>>) {
         let idx = self
             .children
             .iter()
-            .position(|ch| &(**ch.as_ref().unwrap()) as *const Node<T> == curr_child_p)
+            .position(|ch| &(**ch.as_ref().unwrap()) as *const dyn Node<T> == curr_child_p)
             .expect("Child not found when trying to replace it.");
 
         self.children[idx] = Some(new_child);
@@ -219,7 +219,7 @@ mod quad_test {
         // replace the first quadrant with another quad
         let quad2 = Quad::new(QuadTreeConfig::default(), Rectangle::new(0, 5, 10, 25));
 
-        let child_pointer = &**(quad.children[0].as_ref().unwrap()) as *const Node<i32>;
+        let child_pointer = &**(quad.children[0].as_ref().unwrap()) as *const dyn Node<i32>;
         quad.replace_child(child_pointer, quad2);
 
         // Now the first quadrant has 4 cells plus the other 3 quadrants
