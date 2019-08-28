@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 num = "0.2.0"
+svg_fmt = "0.4.1"

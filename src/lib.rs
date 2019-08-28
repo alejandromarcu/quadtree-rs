@@ -5,7 +5,7 @@ pub mod node;
 pub mod point;
 pub mod rectangle;
 
-use node::{Node, Quad};
+use node::{Node, Quad, CellInfo};
 use point::{Coordinate, Point};
 use rectangle::Rectangle;
 
@@ -39,7 +39,7 @@ impl QuadTreeConfig {
 
 pub struct QuadTree<T: Coordinate> {
     root: Box<Quad<T>>,
-    points: HashMap<Id, Point<T>>,
+    pub points: HashMap<Id, Point<T>>,  // TODO, maybe a bad idea to make it pub
 }
 
 impl<T: Coordinate> QuadTree<T> {
@@ -61,6 +61,10 @@ impl<T: Coordinate> QuadTree<T> {
 
     pub fn get_point(&self, id: Id) -> Option<&Point<T>> {
         self.points.get(&id)
+    }
+
+    pub fn get_cells_info(&self) -> Vec<CellInfo<T>> {
+        self.root.get_cells_info()
     }
 }
 
