@@ -14,7 +14,7 @@ use std::collections::HashMap;
 // TODO use generics
 type Id = i32;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct QuadTreeConfig {
     min_per_quad: i32,
     max_per_cell: i32,
@@ -54,7 +54,7 @@ impl<T: Coordinate> QuadTree<T> {
         if self.points.contains_key(&id) {
             return Err(format!("Id already exists: {:?}", id));
         }
-        (*self.root).add(id, point.clone());
+        (*self.root).add(id, point);
         self.points.insert(id, point);
         Ok(())
     }

@@ -8,7 +8,7 @@ use std::fmt;
 pub trait Node<T: Coordinate>: fmt::Debug {
     fn add(&mut self, id: Id, p: Point<T>);
     fn get_cells_info(&self) -> Vec<CellInfo<T>>;
-    fn find_in_area(&self, area: &Rectangle<T>) -> Vec<Id>;
+    fn find_in_area(&self, area: Rectangle<T>) -> Vec<Id>;
 }
 
 struct Cell<T: Coordinate> {
@@ -29,10 +29,10 @@ impl<T: Coordinate + 'static> Node<T> for Cell<T> {
                 return;
             }
 
-            let mut quad: Box<Quad<T>> = Quad::new(self.config.clone(), self.boundary.clone());
+            let mut quad: Box<Quad<T>> = Quad::new(self.config, self.boundary);
 
-            for (id, point) in self.points.iter() {
-                quad.add(id.clone(), point.clone());
+            for (&id, &point) in self.points.iter() {
+                quad.add(id, point);
             }
 
             unsafe {
@@ -42,15 +42,15 @@ impl<T: Coordinate + 'static> Node<T> for Cell<T> {
     }
 
     fn get_cells_info(&self) -> Vec<CellInfo<T>> {
-        vec![CellInfo::new(&self.boundary, self.points.len())]
+        vec![CellInfo::new(self.boundary, self.points.len())]
     }
 
-    fn find_in_area(&self, area: &Rectangle<T>) -> Vec<Id> {
+    fn find_in_area(&self, area: Rectangle<T>) -> Vec<Id> {
         // Just an optimization, not sure if it's worth it.
         let all = self.boundary.is_inside_of(area);
         self.points
             .iter()
-            .filter(|(_, point)| all || area.is_point_inside(point))
+            .filter(|(_, &point)| all || area.is_point_inside(point))
             .map(|(id, _)| *id)
             .collect::<Vec<Id>>()
     }
@@ -85,9 +85,9 @@ pub struct CellInfo<T: Coordinate> {
 }
 
 impl<T: Coordinate> CellInfo<T> {
-    pub fn new(boundary: &Rectangle<T>, count: usize) -> Self {
+    pub fn new(boundary: Rectangle<T>, count: usize) -> Self {
         CellInfo {
-            boundary: boundary.clone(),
+            boundary,
             count,
         }
     }
@@ -120,7 +120,7 @@ impl<T: Coordinate> Node<T> for Quad<T> {
         info
     }
 
-    fn find_in_area(&self, area: &Rectangle<T>) -> Vec<Id> {
+    fn find_in_area(&self, area: Rectangle<T>) -> Vec<Id> {
         if !self.boundary.overlaps(area) {
             return vec![];
         }
@@ -139,7 +139,7 @@ impl<T: Coordinate> Node<T> for Quad<T> {
 impl<T: Coordinate + 'static> Quad<T> {
     pub fn new(config: QuadTreeConfig, boundary: Rectangle<T>) -> Box<Self> {
         let quad = Quad {
-            boundary: boundary.clone(),
+            boundary, 
             children: [None, None, None, None],
         };
         let mut quad = Box::new(quad);
@@ -153,8 +153,7 @@ impl<T: Coordinate + 'static> Quad<T> {
             Rectangle::new(xh, yh, x1, y1),
         ];
         for i in 0..4 {
-            // TODO improve the clone
-            let cell = Cell::new(config.clone(), boundaries[i].clone(), &mut *quad);
+            let cell = Cell::new(config, boundaries[i], &mut *quad);
             quad.children[i] = Some(Box::new(cell));
         }
 
@@ -283,7 +282,7 @@ mod cell_test {
         ch.add(3, Point::new(9, 0));
         ch.add(4, Point::new(5, 5));
 
-        let mut points = ch.find_in_area(&Rectangle::new(-1, -1, 15, 15));
+        let mut points = ch.find_in_area(Rectangle::new(-1, -1, 15, 15));
         points.sort();
 
         assert_eq!(vec![1, 2, 3, 4], points);
@@ -300,17 +299,17 @@ mod cell_test {
         ch.add(3, Point::new(8, 0));
         ch.add(4, Point::new(5, 5));
 
-        let mut points = ch.find_in_area(&Rectangle::new(0, 0, 9, 9));
+        let mut points = ch.find_in_area(Rectangle::new(0, 0, 9, 9));
         points.sort();
         assert_eq!(vec![1, 2, 3, 4], points);
 
-        let points = ch.find_in_area(&Rectangle::new(5, 5, 6, 6));
+        let points = ch.find_in_area(Rectangle::new(5, 5, 6, 6));
         assert_eq!(vec![4], points);
 
-        let points = ch.find_in_area(&Rectangle::new(4, 4, 5, 5));
+        let points = ch.find_in_area(Rectangle::new(4, 4, 5, 5));
         assert_eq!(true, points.is_empty());
 
-        let mut points = ch.find_in_area(&Rectangle::new(0, 0, 6, 6));
+        let mut points = ch.find_in_area(Rectangle::new(0, 0, 6, 6));
         points.sort();
         assert_eq!(vec![1, 4], points);
     }
